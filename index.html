@@ -1,1 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>週間ルーティンメーカー</title>
+    <style>
+        /* 全体のレイアウト */
+        body { font-family: sans-serif; padding: 20px; }
+        
+        /* 時間割のグリッド設定 */
+        .timetable {
+            display: grid;
+            /* 左端(時間表示) + 月〜日 (計8列) */
+            grid-template-columns: 60px repeat(7, 1fr);
+            /* 朝9時〜18時まで (計9行) */
+            grid-template-rows: 30px repeat(9, 60px); 
+            gap: 2px;
+            background-color: #ddd; /* 枠線の色代わり */
+            border: 2px solid #ddd;
+        }
 
+        /* セル（マス目）の共通設定 */
+        .cell {
+            background-color: white;
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        /* 曜日ヘッダー */
+        .header { font-weight: bold; text-align: center; background: #f4f4f4; }
+        
+        /* 時間軸 */
+        .time-label { text-align: right; padding-right: 10px; color: #666; font-size: 12px; }
+
+        /* 予定が入るブロック（例） */
+        .event {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 12px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Weekly Routine</h1>
+    
+    <div class="timetable">
+        <div class="cell"></div> <div class="cell header">Mon</div>
+        <div class="cell header">Tue</div>
+        <div class="cell header">Wed</div>
+        <div class="cell header">Thu</div>
+        <div class="cell header">Fri</div>
+        <div class="cell header">Sat</div>
+        <div class="cell header">Sun</div>
+
+        <div class="cell time-label">09:00</div>
+        <div class="cell" id="mon-09"></div>
+        <div class="cell" id="tue-09"></div>
+        <div class="cell event">朝会</div> 
+        <div class="cell" id="thu-09"></div>
+        <div class="cell" id="fri-09"></div>
+        <div class="cell" id="sat-09"></div>
+        <div class="cell" id="sun-09"></div>
+
+        </div>
+
+</body>
+</html>
