@@ -3,7 +3,7 @@
 ブラウザ上で手軽に1週間の予定表（ルーティン）を作成・管理できるWebアプリケーションです。
 リロードしてもデータが消えないように設計されています。
 
-**👉 [デモサイトはこちら (Demo URL)](https://[あなたのユーザー名].github.io/[リポジトリ名]/)**
+**👉 [デモサイトはこちら (Demo URL)](https://kobayasiayumu.github.io/koa.test/)**
 
 ## 🚀 機能 (Features)
 
@@ -30,7 +30,7 @@
 
 ## 👨‍💻 Author
 
-* Github: [@あなたのユーザー名](https://github.com/あなたのユーザー名)
+* Github: (https://github.com/KobayasiAyumu)
 * Student at Human Academy IT College
 
 ---
