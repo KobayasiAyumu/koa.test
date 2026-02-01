@@ -1,1 +1,37 @@
-# koa.test
+# Weekly Routine Maker 📅
+
+ブラウザ上で手軽に1週間の予定表（ルーティン）を作成・管理できるWebアプリケーションです。
+リロードしてもデータが消えないように設計されています。
+
+**👉 [デモサイトはこちら (Demo URL)](https://kobayasiayumu.github.io/koa.test/)**
+
+## 🚀 機能 (Features)
+
+* **直感的な操作**: マスをクリックするだけで予定の入力・修正・削除が可能です。
+* **データの自動保存**: ブラウザの `localStorage` を使用しているため、ページを閉じても予定が保持されます。
+* **視覚的なスケジュール**: CSS Grid Layout を活用し、見やすい時間割形式を採用しています。
+* **全削除機能**: ワンクリックでスケジュールをリセットできます。
+
+## 🛠 使用技術 (Tech Stack)
+
+フレームワークやライブラリを使用せず、標準的なWeb技術のみで構築しました。
+
+* **HTML5**
+* **CSS3** (CSS Grid, Flexbox)
+* **JavaScript (Vanilla JS)**
+    * DOM操作によるテーブルの動的生成
+    * LocalStorage API によるデータ永続化
+
+## 💡 工夫した点
+
+* **CSS Gridの実践**: 複雑になりがちな時間割レイアウトを、`display: grid` を用いて効率的に実装しました。
+* **保守性の高いコード**: 時間や曜日をJavaScriptの配列・ループ処理で生成しているため、設定変更（例：土日を消す、時間を広げるなど）が容易です。
+* **ユーザー体験**: 入力済みのセルに色を付けて視認性を高めたり、誤操作防止のアラート（全削除時）を実装しました。
+
+## 👨‍💻 Author
+
+* Github: (https://github.com/KobayasiAyumu)
+* Student at Human Academy IT College
+
+---
+&copy; 2026 Weekly Routine Maker
