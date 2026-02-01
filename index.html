@@ -4,90 +4,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Weekly Routine</title>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; padding: 20px; }
-        h1 { text-align: center; }
+        body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        
+        /* ボタンのエリア */
+        .controls { text-align: center; margin-bottom: 20px; }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.8; }
+        .btn-reset { background-color: #ef5350; }  /* 赤 */
+        .btn-save { background-color: #4caf50; }   /* 緑 */
+
+        /* スマホ対応：横スクロール用の枠 */
+        .timetable-wrapper {
+            overflow-x: auto; /* はみ出したらスクロール */
+            padding-bottom: 10px;
+            -webkit-overflow-scrolling: touch; /* スマホでのスクロールを滑らかに */
+        }
 
         /* グリッドレイアウトの設定 */
         .timetable {
             display: grid;
-            grid-template-columns: 60px repeat(7, 1fr); /* 時間軸 + 7曜日 */
+            grid-template-columns: 60px repeat(7, 1fr);
             gap: 1px;
-            background-color: #ddd; /* 枠線の色 */
+            background-color: #ddd;
             border: 1px solid #ddd;
+            /* スマホでも最低限の幅を確保（これ以上縮まない） */
+            min-width: 800px; 
             max-width: 1000px;
             margin: 0 auto;
+            background-color: white; /* 画像化するとき背景が黒くならないように */
         }
 
         .cell {
             background-color: white;
-            min-height: 60px; /* マスの高さ */
+            min-height: 60px;
             padding: 5px;
             font-size: 14px;
-            cursor: pointer; /* クリックできる感 */
+            cursor: pointer;
             transition: background 0.2s;
-            white-space: pre-wrap; /* 改行を反映 */
+            white-space: pre-wrap;
+            word-wrap: break-word; /* 長い単語を折り返す */
         }
 
-        .cell:hover { background-color: #f0f8ff; } /* マウスが乗った時 */
+        .cell:hover { background-color: #f0f8ff; }
         
-        /* ヘッダーと時間軸の見た目 */
         .header { background-color: #f4f4f4; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 40px; cursor: default;}
         .time-label { background-color: #fafafa; text-align: right; padding-right: 10px; color: #666; font-size: 12px; display: flex; align-items: center; justify-content: flex-end; cursor: default;}
 
-        /* 入力済みセルのスタイル */
         .has-event {
             background-color: #e3f2fd;
             border-left: 4px solid #2196f3;
             color: #1565c0;
+            font-weight: bold;
+        }
+
+        /* スマホ向けの微調整 (画面幅が600px以下のとき) */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            h1 { font-size: 1.5rem; }
+            .cell { font-size: 12px; min-height: 50px; } /* 少し文字を小さく */
         }
     </style>
 </head>
 <body>
 
     <h1>Weekly Routine</h1>
-    <button onclick="clearSchedule()" style="margin-bottom: 10px; padding: 5px 10px; cursor: pointer;">全削除</button>
-    <p style="text-align:center; font-size:0.9rem;">マスをクリックして予定を入力・削除できます</p>
     
-    <div class="timetable" id="timetable"></div>
+    <div class="controls">
+        <button class="btn-save" onclick="downloadImage()">📷 画像として保存</button>
+        <button class="btn-reset" onclick="clearSchedule()">🗑️ 全削除</button>
+    </div>
+
+    <p style="text-align:center; font-size:0.8rem; color:#666;">マスをクリックして入力 / 横にスクロールできます</p>
+    
+    <div class="timetable-wrapper">
+        <div class="timetable" id="timetable"></div>
+    </div>
 
     <script>
-        // === 設定 ===
         const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const startHour = 9;  // 9時から
-        const endHour = 20;   // 20時まで表示
-
+        const startHour = 9;
+        const endHour = 20;
         const timetable = document.getElementById('timetable');
 
-        // === 1. 初期化処理（画面を作る） ===
         function init() {
-            // 左上の空白
             createCell('header', '');
-
-            // 曜日ヘッダーの生成
             days.forEach(day => createCell('header', day));
 
-            // 時間割の生成 (縦ループ: 時間, 横ループ: 曜日)
             for (let hour = startHour; hour <= endHour; hour++) {
-                // 左側の時間表示
                 createCell('time-label', `${hour}:00`);
-
-                // 各曜日のセル
                 days.forEach(day => {
-                    const cellId = `${day}-${hour}`; // 例: Mon-9
+                    const cellId = `${day}-${hour}`;
                     const cell = createCell('cell', '');
-                    cell.id = cellId; // IDをつける
-                    
-                    // クリックイベントを設定
+                    cell.id = cellId;
                     cell.addEventListener('click', () => editSchedule(cellId));
                 });
             }
-
-            // 保存されたデータを読み込む
             loadSchedule();
         }
 
-        // セルを作る補助関数
         function createCell(className, text) {
             const div = document.createElement('div');
             div.className = `cell ${className}`;
@@ -96,26 +122,16 @@
             return div;
         }
 
-        // === 2. 編集・保存機能 ===
         function editSchedule(id) {
             const cell = document.getElementById(id);
             const currentText = cell.innerText;
-            
-            // 入力ダイアログを出す
-            const newText = prompt("予定を入力してください（空欄で削除）", currentText);
-
-            // キャンセルされたら何もしない
+            const newText = prompt("予定を入力してください", currentText);
             if (newText === null) return;
-
-            // 画面を更新
             cell.innerText = newText;
             updateCellStyle(cell, newText);
-
-            // データを保存
             saveSchedule(id, newText);
         }
 
-        // 色付けの切り替え
         function updateCellStyle(cell, text) {
             if (text && text.trim() !== "") {
                 cell.classList.add('has-event');
@@ -124,28 +140,19 @@
             }
         }
 
-        // === 3. ローカルストレージ操作 ===
-        // データ保存形式: { "Mon-9": "会議", "Tue-10": "授業" }
-        
         function saveSchedule(id, text) {
-            // 今のデータを取得
             let data = JSON.parse(localStorage.getItem('myRoutineData')) || {};
-            
             if (text && text.trim() !== "") {
-                data[id] = text; // 追加・更新
+                data[id] = text;
             } else {
-                delete data[id]; // 削除
+                delete data[id];
             }
-
-            // JSON文字列にして保存
             localStorage.setItem('myRoutineData', JSON.stringify(data));
         }
 
         function loadSchedule() {
             const data = JSON.parse(localStorage.getItem('myRoutineData'));
             if (!data) return;
-
-            // 保存されたキー（例: Mon-9）ごとに中身を復元
             Object.keys(data).forEach(id => {
                 const cell = document.getElementById(id);
                 if (cell) {
@@ -155,14 +162,28 @@
             });
         }
 
-        // 実行開始
-        // 全削除機能
-function clearSchedule() {
-    if(confirm("本当に全ての予定を削除しますか？")) {
-        localStorage.removeItem('myRoutineData'); // 保存データを消す
-        location.reload(); // 画面をリロードして反映
-    }
-}
+        function clearSchedule() {
+            if(confirm("本当に全ての予定を削除しますか？")) {
+                localStorage.removeItem('myRoutineData');
+                location.reload();
+            }
+        }
+
+        // === 新機能：画像として保存 ===
+        function downloadImage() {
+            // スクリーンショットを撮る対象
+            const target = document.getElementById('timetable');
+
+            // html2canvasを使って画像化
+            html2canvas(target).then(canvas => {
+                // リンクタグを作ってクリックさせることでダウンロード
+                const link = document.createElement('a');
+                link.download = 'my_routine.png'; // ファイル名
+                link.href = canvas.toDataURL(); // 画像データに変換
+                link.click(); // 自動クリック
+            });
+        }
+
         init();
     </script>
 </body>
