@@ -9,41 +9,28 @@
         body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9; }
         h1 { text-align: center; margin-bottom: 10px; }
         
-        /* ボタンのエリア */
         .controls { text-align: center; margin-bottom: 20px; }
         button {
-            padding: 8px 16px;
-            margin: 0 5px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-            color: white;
-            transition: opacity 0.2s;
+            padding: 8px 16px; margin: 0 5px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; transition: opacity 0.2s;
         }
         button:hover { opacity: 0.8; }
-        .btn-reset { background-color: #ef5350; }  /* 赤 */
-        .btn-save { background-color: #4caf50; }   /* 緑 */
+        .btn-reset { background-color: #ef5350; }
+        .btn-save { background-color: #4caf50; }
 
-        /* スマホ対応：横スクロール用の枠 */
         .timetable-wrapper {
-            overflow-x: auto; /* はみ出したらスクロール */
-            padding-bottom: 10px;
-            -webkit-overflow-scrolling: touch; /* スマホでのスクロールを滑らかに */
+            overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch;
         }
 
-        /* グリッドレイアウトの設定 */
         .timetable {
             display: grid;
             grid-template-columns: 60px repeat(7, 1fr);
             gap: 1px;
             background-color: #ddd;
             border: 1px solid #ddd;
-            /* スマホでも最低限の幅を確保（これ以上縮まない） */
             min-width: 800px; 
             max-width: 1000px;
             margin: 0 auto;
-            background-color: white; /* 画像化するとき背景が黒くならないように */
+            background-color: white;
         }
 
         .cell {
@@ -54,26 +41,34 @@
             cursor: pointer;
             transition: background 0.2s;
             white-space: pre-wrap;
-            word-wrap: break-word; /* 長い単語を折り返す */
+            word-wrap: break-word;
         }
+
+        /* === 今回追加した部分 === */
+        /* 土曜日の背景色（薄い青） */
+        .sat { background-color: #e3f2fd; color: #0d47a1; }
+        /* 日曜日の背景色（薄い赤） */
+        .sun { background-color: #ffebee; color: #b71c1c; }
+        /* ====================== */
 
         .cell:hover { background-color: #f0f8ff; }
         
         .header { background-color: #f4f4f4; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 40px; cursor: default;}
         .time-label { background-color: #fafafa; text-align: right; padding-right: 10px; color: #666; font-size: 12px; display: flex; align-items: center; justify-content: flex-end; cursor: default;}
 
+        /* 予定がある時はこの色が優先されます */
         .has-event {
-            background-color: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            color: #1565c0;
-            font-weight: bold;
+            background-color: #2196f3 !important; /* 色を強制適用 */
+            color: white !important;
+            border-left: none;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
-        /* スマホ向けの微調整 (画面幅が600px以下のとき) */
         @media (max-width: 600px) {
             body { padding: 10px; }
             h1 { font-size: 1.5rem; }
-            .cell { font-size: 12px; min-height: 50px; } /* 少し文字を小さく */
+            .cell { font-size: 12px; min-height: 50px; }
         }
     </style>
 </head>
@@ -100,14 +95,27 @@
 
         function init() {
             createCell('header', '');
-            days.forEach(day => createCell('header', day));
+            
+            // 曜日ヘッダー
+            days.forEach(day => {
+                const cell = createCell('header', day);
+                // ★ヘッダーの色分け
+                if (day === 'Sat') cell.classList.add('sat');
+                if (day === 'Sun') cell.classList.add('sun');
+            });
 
+            // 時間割マス
             for (let hour = startHour; hour <= endHour; hour++) {
                 createCell('time-label', `${hour}:00`);
                 days.forEach(day => {
                     const cellId = `${day}-${hour}`;
                     const cell = createCell('cell', '');
                     cell.id = cellId;
+                    
+                    // ★マスの色分け
+                    if (day === 'Sat') cell.classList.add('sat');
+                    if (day === 'Sun') cell.classList.add('sun');
+                    
                     cell.addEventListener('click', () => editSchedule(cellId));
                 });
             }
@@ -169,18 +177,13 @@
             }
         }
 
-        // === 画像として保存 ===
         function downloadImage() {
-            // スクリーンショットを撮る対象
             const target = document.getElementById('timetable');
-
-            // html2canvasを使って画像化
             html2canvas(target).then(canvas => {
-                // リンクタグを作ってクリックさせることでダウンロード
                 const link = document.createElement('a');
-                link.download = 'my_routine.png'; // ファイル名
-                link.href = canvas.toDataURL(); // 画像データに変換
-                link.click(); // 自動クリック
+                link.download = 'my_routine.png';
+                link.href = canvas.toDataURL();
+                link.click();
             });
         }
 
