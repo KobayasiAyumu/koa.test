@@ -3,185 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Weekly Routine</title>
+    <title>My Smart Schedule</title>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; padding: 20px; background-color: #f9f9f9; }
-        h1 { text-align: center; margin-bottom: 10px; }
-        
+        :root {
+            --hour-height: 60px;
+            --header-height: 40px;
+            --primary-color: #4b6cb7;
+            --border-color: #ddd;
+        }
+
+        body { font-family: "Helvetica Neue", Arial, sans-serif; color: #333; margin: 0; padding: 20px; background-color: #f4f7f6; }
+        h1 { text-align: center; color: #2c3e50; }
+
         .controls { text-align: center; margin-bottom: 20px; }
-        button {
-            padding: 8px 16px; margin: 0 5px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; transition: opacity 0.2s;
-        }
-        button:hover { opacity: 0.8; }
-        .btn-reset { background-color: #ef5350; }
-        .btn-save { background-color: #4caf50; }
+        button { padding: 10px 20px; border: none; border-radius: 30px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; margin: 0 5px; }
+        button:active { transform: scale(0.95); }
+        .btn-add { background-color: var(--primary-color); }
+        .btn-save { background-color: #27ae60; }
+        .btn-clear { background-color: #e74c3c; }
 
-        .timetable-wrapper {
-            overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch;
-        }
-
-        .timetable {
-            display: grid;
-            grid-template-columns: 60px repeat(7, 1fr);
-            gap: 1px;
-            background-color: #ddd;
-            border: 1px solid #ddd;
-            min-width: 800px; 
-            max-width: 1000px;
-            margin: 0 auto;
-            background-color: white;
+        .schedule-container {
+            display: flex; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden; position: relative; max-width: 1000px; margin: 0 auto; min-height: 800px; border: 1px solid var(--border-color);
         }
 
-        .cell {
-            background-color: white;
-            min-height: 60px;
-            padding: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: background 0.2s;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+        /* --- 左カラム（時間軸） --- */
+        .time-column { width: 60px; background-color: #fafafa; border-right: 1px solid var(--border-color); flex-shrink: 0; }
+        .time-header-spacer { height: var(--header-height); border-bottom: 1px solid var(--border-color); background-color: #f4f4f4; box-sizing: border-box; }
+        .time-slot { height: var(--hour-height); box-sizing: border-box; position: relative; }
+        .time-slot span {
+            position: absolute; top: 0; right: 5px; transform: translate(0, -50%);
+            background: #fafafa; padding: 0 4px; font-size: 12px; color: #999; z-index: 2; line-height: 1;
         }
 
-        /* === 今回追加した部分 === */
-        /* 土曜日の背景色（薄い青） */
-        .sat { background-color: #e3f2fd; color: #0d47a1; }
-        /* 日曜日の背景色（薄い赤） */
-        .sun { background-color: #ffebee; color: #b71c1c; }
-        /* ====================== */
-
-        .cell:hover { background-color: #f0f8ff; }
-        
-        .header { background-color: #f4f4f4; font-weight: bold; text-align: center; display: flex; align-items: center; justify-content: center; min-height: 40px; cursor: default;}
-        .time-label { background-color: #fafafa; text-align: right; padding-right: 10px; color: #666; font-size: 12px; display: flex; align-items: center; justify-content: flex-end; cursor: default;}
-
-        /* 予定がある時はこの色が優先されます */
-        .has-event {
-            background-color: #2196f3 !important; /* 色を強制適用 */
-            color: white !important;
-            border-left: none;
-            border-radius: 2px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        /* --- 右カラム（曜日エリア） --- */
+        .days-area { flex-grow: 1; display: flex; }
+        .day-column { flex: 1; border-right: 1px solid var(--border-color); position: relative; min-width: 80px; }
+        .day-header {
+            height: var(--header-height); text-align: center; line-height: var(--header-height); font-weight: bold;
+            background-color: #f4f4f4; border-bottom: 1px solid var(--border-color); box-sizing: border-box; position: sticky; top: 0; z-index: 10;
         }
+        .day-column:nth-child(6) .day-header { color: #007bff; background-color: #e3f2fd; }
+        .day-column:nth-child(7) .day-header { color: #dc3545; background-color: #ffebee; }
+        .grid-line { height: var(--hour-height); border-top: 1px solid #eee; box-sizing: border-box; position: relative; }
+        .grid-line::after { content: ""; display: block; position: absolute; top: 50%; width: 100%; border-bottom: 1px dotted #f9f9f9; }
 
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-            h1 { font-size: 1.5rem; }
-            .cell { font-size: 12px; min-height: 50px; }
+        /* --- 予定カード --- */
+        .event-card {
+            position: absolute; left: 2px; right: 2px; background-color: #e3f2fd; border-left: 4px solid #2196f3;
+            color: #1565c0; font-size: 12px; padding: 4px; border-radius: 4px; cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); overflow: hidden; transition: 0.2s; z-index: 5;
         }
+        .event-card:hover { transform: scale(1.02); z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .event-time { font-size: 10px; opacity: 0.8; display: block; margin-bottom: 2px; }
+
+        /* --- モーダル --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal {
+            background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #666; font-size: 14px; }
+        .form-group input[type="text"], .form-group select {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px;
+        }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        /* --- 修正ポイント: 時間入力UIのデザイン --- */
+        .time-control-group { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .time-wrapper {
+            display: flex; align-items: center; background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 5px;
+            width: 100%; box-sizing: border-box; /* 親要素いっぱいに広げる */
+        }
+        .time-display {
+            border: none; background: transparent; font-size: 20px; font-family: monospace; font-weight: bold;
+            flex: 1; /* ★ここが重要！余ったスペースを埋める */
+            text-align: center; color: #333; outline: none; min-width: 0; /* 縮小時に潰れないように */
+        }
+        .arrow-btn {
+            width: 32px; height: 32px; background: #fff; border: 1px solid #ccc; border-radius: 4px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; color: #555; transition: 0.1s; flex-shrink: 0; /* ボタンが潰れないように */
+        }
+        .arrow-btn:hover { background: #eee; }
+        .arrow-btn:active { background: #ddd; transform: scale(0.95); }
+
     </style>
 </head>
 <body>
 
-    <h1>Weekly Routine</h1>
+    <h1>📅 My Smart Schedule</h1>
     
     <div class="controls">
-        <button class="btn-save" onclick="downloadImage()">📷 画像として保存</button>
-        <button class="btn-reset" onclick="clearSchedule()">🗑️ 全削除</button>
+        <button class="btn-add" onclick="openModal()">➕ 予定を追加</button>
+        <button class="btn-save" onclick="saveImage()">📷 画像保存</button>
+        <button class="btn-clear" onclick="clearAll()">🗑️ 全削除</button>
     </div>
 
-    <p style="text-align:center; font-size:0.8rem; color:#666;">マスをクリックして入力 / 横にスクロールできます</p>
-    
-    <div class="timetable-wrapper">
-        <div class="timetable" id="timetable"></div>
+    <div class="schedule-container" id="capture-target">
+        <div class="time-column" id="timeColumn">
+            </div>
+        <div class="days-area" id="daysArea"></div>
+    </div>
+
+    <div class="modal-overlay" id="eventModal">
+        <div class="modal">
+            <h2 id="modalTitle">予定の編集</h2>
+            <input type="hidden" id="eventId">
+            
+            <div class="form-group">
+                <label>タイトル</label>
+                <input type="text" id="inputTitle" placeholder="例：数学、バイト">
+            </div>
+
+            <div class="form-group">
+                <label>曜日</label>
+                <select id="inputDay">
+                    <option value="0">Mon (月)</option>
+                    <option value="1">Tue (火)</option>
+                    <option value="2">Wed (水)</option>
+                    <option value="3">Thu (木)</option>
+                    <option value="4">Fri (金)</option>
+                    <option value="5">Sat (土)</option>
+                    <option value="6">Sun (日)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>開始時間</label>
+                <div class="time-wrapper">
+                    <button class="arrow-btn" onclick="stepTime('inputStart', -15)">▼</button>
+                    <input type="time" id="inputStart" class="time-display" value="09:00">
+                    <button class="arrow-btn" onclick="stepTime('inputStart', 15)">▲</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>終了時間</label>
+                <div class="time-wrapper">
+                    <button class="arrow-btn" onclick="stepTime('inputEnd', -15)">▼</button>
+                    <input type="time" id="inputEnd" class="time-display" value="10:30">
+                    <button class="arrow-btn" onclick="stepTime('inputEnd', 15)">▲</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>色</label>
+                <select id="inputColor">
+                    <option value="blue">🟦 ブルー (勉強)</option>
+                    <option value="red">🟥 レッド (重要)</option>
+                    <option value="green">🟩 グリーン (趣味)</option>
+                    <option value="orange">🟧 オレンジ (バイト)</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="deleteEvent()" id="btnDelete" style="background:#e74c3c; display:none; color:white; border:none; padding:10px 15px; border-radius:4px; cursor:pointer;">削除</button>
+                <button onclick="closeModal()" style="background:#ccc; color:#333; border:none; padding:10px 15px; border-radius:4px; cursor:pointer;">キャンセル</button>
+                <button onclick="saveEvent()" class="btn-add">保存する</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        const startHour = 9;
-        const endHour = 20;
-        const timetable = document.getElementById('timetable');
+        const START_HOUR = 6;
+        const END_HOUR = 24;
+        const HOUR_HEIGHT = 60;
+        const HEADER_HEIGHT = 40;
+        const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        let events = [];
 
         function init() {
-            createCell('header', '');
-            
-            // 曜日ヘッダー
-            days.forEach(day => {
-                const cell = createCell('header', day);
-                // ★ヘッダーの色分け
-                if (day === 'Sat') cell.classList.add('sat');
-                if (day === 'Sun') cell.classList.add('sun');
-            });
+            renderGrid();
+            loadEvents();
+        }
 
-            // 時間割マス
-            for (let hour = startHour; hour <= endHour; hour++) {
-                createCell('time-label', `${hour}:00`);
-                days.forEach(day => {
-                    const cellId = `${day}-${hour}`;
-                    const cell = createCell('cell', '');
-                    cell.id = cellId;
-                    
-                    // ★マスの色分け
-                    if (day === 'Sat') cell.classList.add('sat');
-                    if (day === 'Sun') cell.classList.add('sun');
-                    
-                    cell.addEventListener('click', () => editSchedule(cellId));
-                });
+        function renderGrid() {
+            const timeCol = document.getElementById('timeColumn');
+            const daysArea = document.getElementById('daysArea');
+
+            // スペーサーで高さを合わせる
+            const spacer = document.createElement('div');
+            spacer.className = 'time-header-spacer';
+            timeCol.appendChild(spacer);
+
+            for (let h = START_HOUR; h <= END_HOUR; h++) {
+                const div = document.createElement('div');
+                div.className = 'time-slot';
+                div.innerHTML = `<span>${h}:00</span>`;
+                timeCol.appendChild(div);
             }
-            loadSchedule();
-        }
 
-        function createCell(className, text) {
-            const div = document.createElement('div');
-            div.className = `cell ${className}`;
-            div.textContent = text;
-            timetable.appendChild(div);
-            return div;
-        }
+            DAYS.forEach((day, index) => {
+                const col = document.createElement('div');
+                col.className = 'day-column';
+                col.id = `day-col-${index}`;
+                
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = day;
+                col.appendChild(header);
 
-        function editSchedule(id) {
-            const cell = document.getElementById(id);
-            const currentText = cell.innerText;
-            const newText = prompt("予定を入力してください", currentText);
-            if (newText === null) return;
-            cell.innerText = newText;
-            updateCellStyle(cell, newText);
-            saveSchedule(id, newText);
-        }
-
-        function updateCellStyle(cell, text) {
-            if (text && text.trim() !== "") {
-                cell.classList.add('has-event');
-            } else {
-                cell.classList.remove('has-event');
-            }
-        }
-
-        function saveSchedule(id, text) {
-            let data = JSON.parse(localStorage.getItem('myRoutineData')) || {};
-            if (text && text.trim() !== "") {
-                data[id] = text;
-            } else {
-                delete data[id];
-            }
-            localStorage.setItem('myRoutineData', JSON.stringify(data));
-        }
-
-        function loadSchedule() {
-            const data = JSON.parse(localStorage.getItem('myRoutineData'));
-            if (!data) return;
-            Object.keys(data).forEach(id => {
-                const cell = document.getElementById(id);
-                if (cell) {
-                    cell.innerText = data[id];
-                    updateCellStyle(cell, data[id]);
+                for (let h = START_HOUR; h <= END_HOUR; h++) {
+                    const grid = document.createElement('div');
+                    grid.className = 'grid-line';
+                    grid.onclick = () => openModalNew(index, `${h.toString().padStart(2,'0')}:00`);
+                    col.appendChild(grid);
                 }
+                daysArea.appendChild(col);
             });
         }
 
-        function clearSchedule() {
-            if(confirm("本当に全ての予定を削除しますか？")) {
-                localStorage.removeItem('myRoutineData');
-                location.reload();
-            }
+        function renderEvents() {
+            document.querySelectorAll('.event-card').forEach(e => e.remove());
+
+            events.forEach(ev => {
+                const col = document.getElementById(`day-col-${ev.dayIndex}`);
+                if(!col) return; // エラー回避
+                
+                const card = document.createElement('div');
+                card.className = 'event-card';
+                card.innerHTML = `<span class="event-time">${ev.start} - ${ev.end}</span>${ev.title}`;
+                
+                const top = timeToPx(ev.start);
+                const height = timeToPx(ev.end) - top;
+                
+                // ヘッダー分を考慮した位置計算
+                card.style.top = (top + HEADER_HEIGHT) + 'px'; 
+                card.style.height = Math.max(height - 1, 15) + 'px'; 
+
+                applyColor(card, ev.color);
+                
+                card.onclick = (e) => {
+                    e.stopPropagation();
+                    openModalEdit(ev.id);
+                };
+                col.appendChild(card);
+            });
         }
 
-        function downloadImage() {
-            const target = document.getElementById('timetable');
-            html2canvas(target).then(canvas => {
+        function timeToPx(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            return ((h - START_HOUR) * HOUR_HEIGHT) + ((m / 60) * HOUR_HEIGHT);
+        }
+
+        function applyColor(card, colorType) {
+            const colors = {
+                blue:   { bg: '#e3f2fd', border: '#2196f3', text: '#1565c0' },
+                red:    { bg: '#ffebee', border: '#ef5350', text: '#c62828' },
+                green:  { bg: '#e8f5e9', border: '#66bb6a', text: '#2e7d32' },
+                orange: { bg: '#fff3e0', border: '#ffa726', text: '#ef6c00' }
+            };
+            const c = colors[colorType] || colors.blue;
+            card.style.backgroundColor = c.bg;
+            card.style.borderLeftColor = c.border;
+            card.style.color = c.text;
+        }
+
+        /* --- 時間操作・モーダル関連 --- */
+        const modal = document.getElementById('eventModal');
+
+        function stepTime(inputId, minutes) {
+            const input = document.getElementById(inputId);
+            let [h, m] = input.value.split(':').map(Number);
+            
+            const date = new Date();
+            date.setHours(h);
+            date.setMinutes(m + minutes);
+            
+            const newH = date.getHours().toString().padStart(2, '0');
+            const newM = date.getMinutes().toString().padStart(2, '0');
+            input.value = `${newH}:${newM}`;
+        }
+
+        function openModal() {
+            document.getElementById('eventId').value = '';
+            document.getElementById('inputTitle').value = '';
+            document.getElementById('inputDay').value = 0;
+            document.getElementById('inputStart').value = '09:00';
+            document.getElementById('inputEnd').value = '10:30';
+            document.getElementById('btnDelete').style.display = 'none';
+            document.getElementById('modalTitle').innerText = '✨ 新しい予定';
+            modal.style.display = 'flex';
+        }
+
+        function openModalNew(dayIndex, startTime) {
+            openModal();
+            document.getElementById('inputDay').value = dayIndex;
+            document.getElementById('inputStart').value = startTime;
+            const [h, m] = startTime.split(':').map(Number);
+            document.getElementById('inputEnd').value = `${(h+1).toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+        }
+
+        function openModalEdit(id) {
+            const ev = events.find(e => e.id === id);
+            if(!ev) return;
+            document.getElementById('eventId').value = ev.id;
+            document.getElementById('inputTitle').value = ev.title;
+            document.getElementById('inputDay').value = ev.dayIndex;
+            document.getElementById('inputStart').value = ev.start;
+            document.getElementById('inputEnd').value = ev.end;
+            document.getElementById('inputColor').value = ev.color;
+            document.getElementById('btnDelete').style.display = 'block';
+            document.getElementById('modalTitle').innerText = '📝 予定の編集';
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() { modal.style.display = 'none'; }
+
+        function saveEvent() {
+            const id = document.getElementById('eventId').value;
+            const title = document.getElementById('inputTitle').value;
+            const dayIndex = document.getElementById('inputDay').value;
+            const start = document.getElementById('inputStart').value;
+            const end = document.getElementById('inputEnd').value;
+            const color = document.getElementById('inputColor').value;
+
+            if(!title) { alert('タイトルを入力してください'); return; }
+            if(start >= end) { alert('時間は「開始 < 終了」にしてください'); return; }
+
+            if (id) {
+                const index = events.findIndex(e => e.id == id);
+                events[index] = { id: Number(id), dayIndex, start, end, title, color };
+            } else {
+                events.push({ id: Date.now(), dayIndex, start, end, title, color });
+            }
+            saveToLocal();
+            renderEvents();
+            closeModal();
+        }
+
+        function deleteEvent() {
+            if(!confirm('本当に削除しますか？')) return;
+            const id = document.getElementById('eventId').value;
+            events = events.filter(e => e.id != id);
+            saveToLocal();
+            renderEvents();
+            closeModal();
+        }
+
+        function saveToLocal() { localStorage.setItem('smartSchedule', JSON.stringify(events)); }
+        function loadEvents() {
+            const data = localStorage.getItem('smartSchedule');
+            if(data) { events = JSON.parse(data); renderEvents(); }
+        }
+        function clearAll() {
+            if(confirm("全ての予定を削除しますか？")) { events = []; saveToLocal(); renderEvents(); }
+        }
+        function saveImage() {
+            html2canvas(document.getElementById('capture-target')).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'my_routine.png';
+                link.download = 'my_schedule.png';
                 link.href = canvas.toDataURL();
                 link.click();
             });
