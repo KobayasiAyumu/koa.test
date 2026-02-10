@@ -37,6 +37,7 @@ function timeToPx(timeStr) {
     // (時 * 60px) + (分 / 60 * 60px)
     return ((h - START_HOUR) * HOUR_HEIGHT) + ((m / 60) * HOUR_HEIGHT);
 }
+```
 2. UI/UXの徹底的な改善
 当初は時刻が見切れる問題がありましたが、CSSの flexbox を活用してレスポンシブな入力フォームを実装しました。 また、時間軸とグリッド線の高さが1pxでもズレないよう、box-sizing とスペーサー要素を用いてピクセルパーフェクトなレイアウトを実現しています。
 
