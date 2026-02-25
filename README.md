@@ -3,7 +3,7 @@
 Googleカレンダーのような直感的な操作性を実現した、ブラウザ完結型の週間スケジュール管理アプリです。
 従来の「1時間ごとのマス目」ではなく、**分単位での自由なスケジュール調整**を可能にし、学生や社会人の細かいタスク管理をサポートします。
 
-**👉 [デモサイトはこちら (Demo URL)](https://kobayasiayumu.github.io/koa.test/)**
+**👉 [デモサイトはこちら (Demo URL)](https://kobayasiayumu.github.io/Weekly-Routine/)**
 
 ## 💡 開発背景 (Background)
 
